@@ -6,7 +6,7 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
-# Fallback: define model training logic if no .pkl files exist
+# Fallback model training if needed
 def train_and_save_model():
     df = pd.read_csv('data/train.csv')
     df.drop(['Unnamed: 0', 'id'], axis=1, errors='ignore', inplace=True)
@@ -24,37 +24,40 @@ def train_and_save_model():
     joblib.dump(model, 'rf_model.pkl')
     joblib.dump(list(X.columns), 'feature_names.pkl')
 
-# Trigger fallback if needed
+# Train if models not found
 if not os.path.exists("rf_model.pkl") or not os.path.exists("feature_names.pkl"):
     train_and_save_model()
 
-# Load model and features
+# Load trained model
 model = joblib.load("rf_model.pkl")
 feature_names = joblib.load("feature_names.pkl")
 
-# Streamlit UI
-st.set_page_config(page_title="Airline Satisfaction Predictor", layout="centered")
+# UI Layout
+st.set_page_config(page_title="Airline Passenger Satisfaction Predictor", layout="centered")
 st.title("✈️ Airline Passenger Satisfaction Predictor")
+st.write("Fill out the passenger information below to predict their satisfaction level.")
 
-# Sidebar inputs
-st.sidebar.header("Passenger Info")
-gender = st.sidebar.selectbox("Gender", ["Male", "Female"], key="gender_selectbox")
-customer_type = st.sidebar.selectbox("Customer Type", ["Loyal Customer", "disloyal Customer"], key="customer_type_selectbox")
-travel_type = st.sidebar.selectbox("Type of Travel", ["Business travel", "Personal Travel"], key="travel_type_selectbox")
-travel_class = st.sidebar.selectbox("Class", ["Business", "Eco", "Eco Plus"], key="travel_class_selectbox")
-age = st.sidebar.slider("Age", 7, 85, 30)
-flight_distance = st.sidebar.slider("Flight Distance", 31, 5000, 500)
+# Input fields
+col1, col2 = st.columns(2)
+with col1:
+    gender = st.selectbox("Gender", ["Male", "Female"])
+    customer_type = st.selectbox("Customer Type", ["Loyal Customer", "disloyal Customer"])
+    travel_type = st.selectbox("Type of Travel", ["Business travel", "Personal Travel"])
+    travel_class = st.selectbox("Class", ["Business", "Eco", "Eco Plus"])
+with col2:
+    age = st.slider("Age", 7, 85, 30)
+    flight_distance = st.slider("Flight Distance", 31, 5000, 500)
 
-# Service ratings
-wifi = st.sidebar.slider("Inflight wifi service", 0, 5, 3)
-booking = st.sidebar.slider("Ease of Online booking", 0, 5, 3)
-online_boarding = st.sidebar.slider("Online boarding", 0, 5, 3)
-seat_comfort = st.sidebar.slider("Seat comfort", 0, 5, 3)
-entertainment = st.sidebar.slider("Inflight entertainment", 0, 5, 3)
-baggage = st.sidebar.slider("Baggage handling", 0, 5, 3)
-cleanliness = st.sidebar.slider("Cleanliness", 0, 5, 3)
+st.subheader("Rate the services (0–5):")
+wifi = st.slider("Inflight wifi service", 0, 5, 3)
+booking = st.slider("Ease of Online booking", 0, 5, 3)
+online_boarding = st.slider("Online boarding", 0, 5, 3)
+seat_comfort = st.slider("Seat comfort", 0, 5, 3)
+entertainment = st.slider("Inflight entertainment", 0, 5, 3)
+baggage = st.slider("Baggage handling", 0, 5, 3)
+cleanliness = st.slider("Cleanliness", 0, 5, 3)
 
-# Build input
+# Build model input
 input_data = pd.DataFrame(np.zeros((1, len(feature_names))), columns=feature_names)
 input_data["Age"] = age
 input_data["Flight Distance"] = flight_distance
@@ -71,17 +74,16 @@ input_data["Type of Travel_Personal Travel"] = 1 if travel_type == "Personal Tra
 input_data["Class_Eco"] = 1 if travel_class == "Eco" else 0
 input_data["Class_Eco Plus"] = 1 if travel_class == "Eco Plus" else 0
 
-# Predict and display result
+# Prediction
 if st.button("Predict Satisfaction"):
     prediction = model.predict(input_data)[0]
     if prediction == 1:
         st.success("✅ This passenger is likely **Satisfied**.")
     else:
         st.error("⚠️ This passenger is likely **Dissatisfied**.")
-        st.markdown("### 🤔 Why might this passenger be dissatisfied?")
+        st.markdown("### 🤔 Possible reasons for dissatisfaction:")
         st.markdown("""
-        - Low ratings in service categories (wifi, comfort, entertainment)
-        - Economy or Economy Plus class
-        - Long flight with basic amenities
-        - Not a loyal or frequent flyer
+        - Lower service ratings (wifi, entertainment, comfort)
+        - Economy class or no loyalty status
+        - Longer flight distance with poor amenities
         """)
