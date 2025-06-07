@@ -1,33 +1,31 @@
 import pandas as pd
 import joblib
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
 
-# Load data
-df = pd.read_csv('data/train.csv')
-df.drop(['Unnamed: 0', 'id'], axis=1, errors='ignore', inplace=True)
-df['Arrival Delay in Minutes'].fillna(df['Arrival Delay in Minutes'].median(), inplace=True)
-df['satisfaction'] = df['satisfaction'].apply(lambda x: 1 if x == 'satisfied' else 0)
+def train_and_save_model():
+    df = pd.read_csv('data/train.csv')
 
-# One-hot encode categorical features
-df = pd.get_dummies(df, drop_first=True)
+    # Clean data
+    df.drop(['Unnamed: 0', 'id'], axis=1, errors='ignore', inplace=True)
+    df['Arrival Delay in Minutes'].fillna(0, inplace=True)
+    df['satisfaction'] = df['satisfaction'].apply(lambda x: 1 if x == 'satisfied' else 0)
 
-# Train-test split
-X = df.drop('satisfaction', axis=1)
-y = df['satisfaction']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Encode
+    df = pd.get_dummies(df, drop_first=True)
+    X = df.drop('satisfaction', axis=1)
+    y = df['satisfaction']
 
-# Train model
-model = RandomForestClassifier(random_state=42)
-model.fit(X_train, y_train)
+    # Train/test split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Evaluation
-y_pred = model.predict(X_test)
-print("✅ Classification Report:")
-print(classification_report(y_test, y_pred))
+    # Train model
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_train, y_train)
 
-# Save model and feature names
-joblib.dump(model, 'rf_model.pkl')
-joblib.dump(list(X.columns), 'feature_names.pkl')  # 👈 THIS is what's missing
-print("✅ Model and feature names saved.")
+    # Save model + features
+    joblib.dump(model, 'rf_model.pkl')
+    joblib.dump(list(X.columns), 'feature_names.pkl')
+
+# Uncomment to test manually
+# train_and_save_model()
