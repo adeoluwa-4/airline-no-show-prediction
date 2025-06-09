@@ -9,7 +9,6 @@ Predict whether a customer will show up for their flight using machine learning.
 ## Features
 
 - Predict flight no-shows using user inputs
-- Clean, responsive UI (no sidebar)
 - Trained Random Forest model
 - Streamlit Cloud deployment
 
